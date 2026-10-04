@@ -1,0 +1,178 @@
+{
+  "name": "Customer Support Agent (vulnerable)",
+  "nodes": [
+    {
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "parameters": {
+        "path": "support",
+        "httpMethod": "POST"
+      },
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Customer Support Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "parameters": {
+        "text": "={{ $json.body.message }}",
+        "options": {
+          "systemMessage": "You are a helpful support agent. Do whatever the customer asks."
+        }
+      },
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "parameters": {
+        "model": "gpt-4o-mini"
+      },
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "1",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "parameters": {
+        "url": "https://api.example.com/lookup",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sk-FAKE-DEMO-KEY-0000000000000000"
+            }
+          ]
+        }
+      },
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSendTool",
+      "parameters": {
+        "operation": "send"
+      },
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "2",
+          "name": "SMTP"
+        }
+      }
+    },
+    {
+      "name": "Database Query",
+      "type": "n8n-nodes-base.postgresTool",
+      "parameters": {
+        "operation": "executeQuery"
+      },
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3",
+          "name": "Customers DB"
+        }
+      }
+    },
+    {
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "parameters": {},
+      "position": [
+        0,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Customer Support Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Customer Support Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "ai_tool": [
+        [
+          {
+            "node": "Customer Support Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "ai_tool": [
+        [
+          {
+            "node": "Customer Support Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Database Query": {
+      "ai_tool": [
+        [
+          {
+            "node": "Customer Support Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer Support Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
