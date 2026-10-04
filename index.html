@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101419">
+  <title>AgentAudit — AI Workflow Security Analyzer</title>
+  <style>
+    :root{color-scheme:dark;--bg:#101419;--panel:#191f26;--panel2:#202832;--line:#303a45;--text:#edf2f7;--muted:#a3afbd;--accent:#8b9dff;--good:#75d6a0;--warn:#ffca72;--bad:#ff7b83}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 12% 0%,#202945 0,transparent 38%),var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+    main{width:min(1180px,calc(100% - 36px));margin:38px auto 72px}header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:26px}
+    h1{font-size:clamp(32px,5vw,48px);line-height:1.1;margin:0 0 10px;letter-spacing:-1.5px}h2{font-size:22px;margin:0 0 15px}h3{font-size:17px;margin:20px 0 8px}
+    p{margin:6px 0;color:var(--muted)}.eyebrow{color:#b7c3ff;text-transform:uppercase;letter-spacing:.14em;font-size:12px;font-weight:700}
+    .panel{background:linear-gradient(155deg,rgba(31,39,49,.96),rgba(23,29,36,.98));border:1px solid var(--line);border-radius:16px;padding:22px;margin:16px 0;box-shadow:0 18px 50px #0002}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:13px}.field{display:flex;flex-direction:column;gap:7px}.field label{color:var(--muted);font-size:13px}
+    input,select,textarea{width:100%;border:1px solid #46515e;border-radius:9px;background:#11171d;color:var(--text);padding:10px 12px;font:inherit}textarea{min-height:85px;resize:vertical}
+    input[type=file]{padding:8px}input[type=checkbox]{width:auto;accent-color:var(--accent)}button,.button{border:1px solid #5365c0;border-radius:9px;background:#5365c0;color:white;padding:10px 15px;font:600 14px inherit;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+    button.secondary,.button.secondary{background:#222b35;border-color:#46515e;color:var(--text)}button:disabled{opacity:.55;cursor:wait}.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}
+    .notice{padding:12px 14px;border-radius:10px;background:#263149;border:1px solid #465581;color:#dae0ff;margin:12px 0}.error{background:#3b2228;border-color:#76414a;color:#ffd8da}
+    .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.metric{border:1px solid var(--line);background:#11171d;border-radius:11px;padding:15px}.metric strong{display:block;font-size:25px}.metric span{font-size:12px;color:var(--muted)}
+    .risk{display:flex;align-items:center;gap:16px}.score{font-size:44px;font-weight:750;letter-spacing:-2px}.bar{height:10px;border-radius:10px;background:#303943;overflow:hidden;flex:1}.bar i{display:block;height:100%;background:linear-gradient(90deg,#65c990,#ffcf68,#fb6f79);border-radius:inherit}
+    .tabs{display:flex;gap:5px;overflow-x:auto;border-bottom:1px solid var(--line);margin:22px 0 15px}.tab{white-space:nowrap;background:none;border:0;border-radius:8px 8px 0 0;color:var(--muted);padding:11px 12px}.tab.active{color:white;background:#252d38;border-bottom:2px solid var(--accent)}
+    .tabpane{display:none}.tabpane.active{display:block}.finding{border:1px solid var(--line);border-left:4px solid #7b8794;background:#141a20;border-radius:10px;padding:15px;margin:10px 0}.finding.CRITICAL,.finding.HIGH{border-left-color:var(--bad)}.finding.MEDIUM{border-left-color:var(--warn)}.finding.LOW{border-left-color:var(--good)}
+    .badge{font-size:11px;padding:3px 7px;border-radius:20px;background:#2d3540;color:#dbe2ea}.muted{color:var(--muted)}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}th{color:#c7d0db;background:#202832}pre,code{font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#10151a;border:1px solid var(--line);padding:13px;border-radius:9px;color:#dce5ee}
+    details{border:1px solid var(--line);border-radius:9px;padding:11px 13px;margin:10px 0;background:#151b21}summary{cursor:pointer;font-weight:650}.empty{padding:25px;text-align:center;color:var(--muted)}.privacy{font-size:13px}.status{min-height:23px;color:var(--muted)}footer{margin-top:28px;color:var(--muted);font-size:12px}
+    @media(max-width:650px){main{width:calc(100% - 22px);margin-top:22px}.panel{padding:16px}header{display:block}.risk{align-items:flex-start;flex-direction:column;gap:4px}.bar{width:100%;flex:none}}
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div><div class="eyebrow">Workflow security, made explainable</div><h1>🛡 AgentAudit</h1><p>Inspect agent workflows, map tools and data flows, and review security risks before deployment.</p></div>
+    <span class="badge">Rules-first · privacy-conscious</span>
+  </header>
+
+  <section class="panel">
+    <h2>Analyze a workflow</h2>
+    <div class="grid">
+      <div class="field"><label for="source">Workflow source</label><select id="source"><option value="">Upload a workflow</option><option value="vulnerable">Vulnerable sample</option><option value="safer">Safer sample</option></select></div>
+      <div class="field"><label for="framework">Framework</label><select id="framework"><option>n8n</option><option>LangChain</option><option>custom</option><option>other</option></select></div>
+      <div class="field"><label for="file">Upload workflow JSON</label><input id="file" type="file" accept=".json,application/json"></div>
+    </div>
+    <div class="field" style="margin-top:13px"><label for="purpose">What should this workflow do? (optional)</label><textarea id="purpose" maxlength="5000" placeholder="Describe the intended workflow behavior"></textarea></div>
+    <div class="actions"><button id="analyze">Analyze workflow</button><button id="clear" class="secondary">Clear my data</button></div>
+    <p class="privacy">Files are processed in memory and never stored. Credential values are masked; redaction is best-effort.</p>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+  </section>
+
+  <section id="results" hidden>
+    <div class="panel">
+      <h2>Workflow overview</h2><div id="metrics" class="metrics"></div>
+      <div style="margin-top:20px"><div class="risk"><div><span class="muted">Estimated overall risk</span><div class="score"><span id="score">0</span><small style="font-size:17px"> / 100</small></div></div><div class="bar"><i id="riskbar"></i></div></div><p id="summary"></p></div>
+      <nav class="tabs" aria-label="Analysis sections">
+        <button class="tab active" data-tab="findings">Findings</button><button class="tab" data-tab="ai">AI analysis</button><button class="tab" data-tab="simulation">Attack simulation</button><button class="tab" data-tab="fix">Auto-fix</button><button class="tab" data-tab="data">Workflow data</button><button class="tab" data-tab="compare">Compare runs</button>
+      </nav>
+      <section id="pane-findings" class="tabpane active"><div class="actions" style="margin:0 0 12px"><button class="secondary" id="download-md">Download Markdown</button><button class="secondary" id="download-json">Download JSON</button></div><div id="findings"></div></section>
+      <section id="pane-ai" class="tabpane">
+        <p>Python identifies workflow facts; optional Google Gemini analysis interprets how inputs, agents, and tools combine.</p>
+        <details><summary>Review the facts that will be shared</summary><pre id="facts"></pre></details>
+        <div class="grid">
+          <div class="field"><label for="api-key">Google API key (used for this request only)</label><input id="api-key" type="password" autocomplete="off" placeholder="Optional; also checks server configuration"></div>
+          <div class="field"><label for="model">Gemma model id</label><input id="model" value="gemma-4-31b-it"></div>
+        </div>
+        <label class="privacy"><input type="checkbox" id="include-prompts"> Include redacted prompt excerpts in the facts sent to Google</label>
+        <div class="actions"><button id="run-ai" class="secondary">Run AI analysis on this data</button></div><div id="ai-message"></div>
+      </section>
+      <section id="pane-simulation" class="tabpane">
+        <p>Fictional defensive walkthroughs only; nothing is executed.</p>
+        <div class="grid"><div class="field"><label for="sim-key">Google API key (optional)</label><input id="sim-key" type="password" autocomplete="off"></div><div class="field"><label for="sim-model">Gemma model id</label><input id="sim-model" value="gemma-4-31b-it"></div></div>
+        <label class="privacy"><input type="checkbox" id="sim-ai"> Ask Google to write the scenarios (sends the reviewed facts)</label>
+        <div class="actions"><button id="run-sim" class="secondary">Write attack stories</button></div><div id="scenarios"></div>
+      </section>
+      <section id="pane-fix" class="tabpane">
+        <p>Generates a hardened copy for review and download. It never changes or deploys the original workflow.</p>
+        <div class="actions"><button id="run-fix" class="secondary">Generate hardened workflow</button></div><div id="fix-result"></div>
+      </section>
+      <section id="pane-data" class="tabpane"><div id="workflow-data"></div><h3>Workflow connections</h3><div id="graph"></div></section>
+      <section id="pane-compare" class="tabpane"><p>Run analyses stay in this browser tab only; no server-side history is retained.</p><div id="history"></div></section>
+    </div>
+  </section>
+  <footer>Risk estimates are not a security certification. “No findings” does not prove a workflow is safe. Uploaded workflows are parsed as JSON and never executed.</footer>
+</main>
+<script>
+(() => {
+  const state = { workflow: null, label: "", result: null, history: [], fix: null, scenarios: [] };
+  const $ = (id) => document.getElementById(id);
+  const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+  const setStatus = (message, error = false) => { $("status").textContent = message; $("status").classList.toggle("error", error); };
+  const request = async (path, body) => {
+    const response = await fetch(path, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || data.error || `Request failed (${response.status})`);
+    return data;
+  };
+  const baseRequest = () => ({workflow:state.workflow, purpose:$("purpose").value, framework:$("framework").value});
+  const showTab = (name) => {
+    document.querySelectorAll(".tab").forEach((button) => button.classList.toggle("active", button.dataset.tab === name));
+    document.querySelectorAll(".tabpane").forEach((pane) => pane.classList.toggle("active", pane.id === `pane-${name}`));
+  };
+  document.querySelectorAll(".tab").forEach((button) => button.addEventListener("click", () => showTab(button.dataset.tab)));
+
+  async function analyze() {
+    if (!state.workflow) throw new Error("Choose a sample or upload a workflow JSON file first.");
+    setStatus("Analyzing workflow…");
+    const result = await request("/api/analyze", baseRequest());
+    state.result = result;
+    state.fix = null;
+    state.scenarios = [];
+    state.history.push({name:state.label || result.inventory.name, risk:result.risk_score, rules:result.rule_score, gemma:result.gemma_score, findings:result.findings.length});
+    renderResult();
+    $("results").hidden = false;
+    setStatus("Analysis complete.");
+  }
+
+  function renderResult() {
+    const r = state.result, inv = r.inventory, counts = inv.counts;
+    $("metrics").innerHTML = [["Agents",counts.agents],["Tools",counts.tools],["APIs",counts.apis],["Credential refs",counts.credential_refs],["External inputs",counts.external_inputs]].map(([label,value])=>`<div class="metric"><strong>${escapeHtml(value)}</strong><span>${label}</span></div>`).join("");
+    $("score").textContent = r.risk_score;
+    $("riskbar").style.width = `${Math.max(0,Math.min(100,r.risk_score))}%`;
+    $("summary").textContent = r.gemma_summary || `Deterministic rules score: ${r.rule_score}/100.`;
+    $("facts").textContent = JSON.stringify(r.facts, null, 2);
+    $("findings").innerHTML = r.findings.length ? r.findings.map((f)=>`<article class="finding ${escapeHtml(f.severity)}"><div><span class="badge">${escapeHtml(f.severity)}</span> <strong>${escapeHtml(f.title)}</strong> <span class="muted">[${escapeHtml(f.source)}]</span></div><p><b>Category:</b> ${escapeHtml(f.category)} · <b>OWASP:</b> ${escapeHtml(f.owasp || "n/a")} · <b>Component:</b> ${escapeHtml(f.component)} · <b>Confidence:</b> ${escapeHtml(f.confidence)}</p><p><b>Evidence</b></p><ul>${(f.evidence||[]).map((e)=>`<li>${escapeHtml(e)}</li>`).join("")}</ul><p><b>Why it matters:</b> ${escapeHtml(f.explanation)}</p><p><b>Potential impact:</b> ${escapeHtml(f.impact)}</p><p><b>Recommended fix:</b> ${escapeHtml(f.recommendation)}</p></article>`).join("") : '<div class="empty">No findings detected. This does not prove the workflow is safe.</div>';
+    renderData();
+    renderHistory();
+    $("ai-message").innerHTML = r.gemma_error ? `<div class="notice error">AI unavailable; showing deterministic findings: ${escapeHtml(r.gemma_error)}</div>` : (r.gemma_score !== null ? `<div class="notice">AI analysis complete (score ${escapeHtml(r.gemma_score)}).</div>` : "");
+    $("scenarios").innerHTML = state.scenarios.map(renderScenario).join("");
+  }
+
+  function renderData() {
+    const inv = state.result.inventory;
+    const rows = Object.entries(inv.type_counts).map(([type,count])=>`<tr><td>${escapeHtml(type)}</td><td>${escapeHtml(count)}</td></tr>`).join("");
+    const tools = Object.values(inv.agents).flatMap((agent)=>agent.tools.map((tool)=>`<tr><td>${escapeHtml(agent.name)}</td><td>${escapeHtml(tool.name)}</td><td>${escapeHtml(tool.type.split(".").pop())}</td><td>${escapeHtml(tool.kinds.join(", "))}</td><td>${tool.approval_gate ? "Yes" : "No"}</td></tr>`)).join("");
+    const flows = inv.flows.map((flow)=>`<tr><td>${escapeHtml(flow.input)}</td><td>${escapeHtml(flow.agent)}</td><td>${escapeHtml(flow.path.join(" → "))}</td><td>${escapeHtml(flow.validation_nodes.join(", ") || "none")}</td></tr>`).join("");
+    const credentials = inv.credentials.map((credential)=>`<tr><td>${escapeHtml(credential.node)}</td><td>${escapeHtml(credential.credential_type)}</td></tr>`).join("");
+    $("workflow-data").innerHTML = `<h3>Node count by type</h3>${table(["Type","Nodes"],rows)}<h3>Agent → tool relationships</h3>${table(["Agent","Tool","Type","Kinds","Approval gate"],tools)}<h3>External input → agent flows</h3>${table(["Input","Agent","Path","Validation"],flows)}<h3>Credential references (names only; no values)</h3>${table(["Node","Credential type"],credentials)}`;
+    const nodes = Object.entries(inv.kinds);
+    const nodeList = nodes.map(([name,kinds])=>`<li><b>${escapeHtml(name)}</b> <span class="badge">${escapeHtml(kinds.join(", ") || "node")}</span></li>`).join("");
+    const edgeList = inv.edges.map((edge)=>`<li>${escapeHtml(edge.source)} → ${escapeHtml(edge.target)} <span class="muted">(${escapeHtml(edge.type)})</span></li>`).join("");
+    $("graph").innerHTML = `<h3>Nodes</h3><ul>${nodeList || "<li>No nodes found</li>"}</ul><h3>Connections</h3><ul>${edgeList || "<li>No connections found</li>"}</ul><p class="muted">AI tool/model links are shown in the relationships table.</p>`;
+  }
+  const table = (headers, rows) => `<div class="scroll"><table><thead><tr>${headers.map((header)=>`<th>${escapeHtml(header)}</th>`).join("")}</tr></thead><tbody>${rows || `<tr><td colspan="${headers.length}" class="muted">None found</td></tr>`}</tbody></table></div>`;
+  const renderScenario = (scenario) => `<details open><summary>${escapeHtml(scenario.title)}</summary><p><b>Fictional injected content:</b></p><pre>${escapeHtml(scenario.malicious_input)}</pre><ol>${scenario.steps.map((step)=>`<li>${escapeHtml(step)}</li>`).join("")}</ol><p><b>Potential outcome:</b> ${escapeHtml(scenario.outcome)}</p><p><b>Mitigation:</b> ${escapeHtml(scenario.mitigated_by)}</p></details>`;
+  function renderHistory() {
+    $("history").innerHTML = state.history.length ? table(["Workflow","Risk","Rules","Gemma","Findings"],state.history.map((row)=>`<tr>${[row.name,row.risk,row.rules,row.gemma ?? "—",row.findings].map((value)=>`<td>${escapeHtml(value)}</td>`).join("")}</tr>`).join("")) : '<div class="empty">No analysis runs yet.</div>';
+  }
+  const download = (name, content, type) => { const url=URL.createObjectURL(new Blob([content],{type})); const anchor=document.createElement("a"); anchor.href=url; anchor.download=name; anchor.click(); URL.revokeObjectURL(url); };
+  const reportJson = () => JSON.stringify({risk_score:state.result.risk_score,summary:state.result.gemma_summary,findings:state.result.findings},null,2);
+  const reportMarkdown = () => {
+    const r=state.result, lines=[`# AgentAudit report: ${r.inventory.name}`,"",`**Estimated risk score:** ${r.risk_score}/100 (rules: ${r.rule_score}, Gemma: ${r.gemma_score})`,"","_Estimated risk, not a security certification. No findings does not mean the workflow is safe._",""];
+    if(r.gemma_summary) lines.push(r.gemma_summary,"");
+    for(const f of r.findings) lines.push(`## [${f.severity}] ${f.title}`,`- Category: ${f.category} (${f.owasp || "n/a"})`,`- Component: ${f.component}`,`- Confidence: ${f.confidence} (source: ${f.source})`,"- Evidence:",...(f.evidence||[]).map((e)=>`  - ${e}`),`- Why it matters: ${f.explanation}`,`- Potential impact: ${f.impact}`,`- Fix: ${f.recommendation}`,"");
+    return lines.join("\n");
+  };
+
+  $("source").addEventListener("change", async (event) => {
+    if (!event.target.value) return;
+    try {
+      setStatus("Loading sample…");
+      const response=await fetch(`/api/samples/${event.target.value}`);
+      if(!response.ok) throw new Error("Could not load the sample workflow.");
+      state.workflow=await response.json(); state.label=`${event.target.value}_workflow.json`;
+      $("file").value=""; setStatus(`Loaded ${state.label}. Select Analyze workflow when ready.`);
+    } catch(error) { setStatus(error.message,true); }
+  });
+  $("file").addEventListener("change", async (event) => {
+    const file=event.target.files[0]; if(!file) return;
+    if(file.size>2*1024*1024) { state.workflow=null; setStatus("File too large (limit 2 MB).",true); return; }
+    try { state.workflow=JSON.parse(await file.text()); state.label=file.name; $("source").value=""; setStatus(`Loaded ${file.name}. Select Analyze workflow when ready.`); }
+    catch(error) { state.workflow=null; setStatus(`Invalid workflow JSON: ${error.message}`,true); }
+  });
+  $("analyze").addEventListener("click", async()=>{ $("analyze").disabled=true; try{await analyze();}catch(error){setStatus(error.message,true);}finally{$("analyze").disabled=false;} });
+  $("clear").addEventListener("click",()=>{state.workflow=null;state.label="";state.result=null;state.history=[];state.fix=null;state.scenarios=[];$("source").value="";$("file").value="";$("purpose").value="";$("results").hidden=true;$("api-key").value="";$("sim-key").value="";setStatus("Cleared this browser session.");});
+  $("download-json").addEventListener("click",()=>download("agentaudit_report.json",reportJson(),"application/json"));
+  $("download-md").addEventListener("click",()=>download("agentaudit_report.md",reportMarkdown(),"text/markdown"));
+  $("run-ai").addEventListener("click",async()=>{
+    if(!state.result)return; $("run-ai").disabled=true;$("ai-message").innerHTML='<div class="notice">Asking Gemini… The reviewed facts shown above are sent to Google when this is submitted.</div>';
+    try {const result=await request("/api/enrich",{...baseRequest(),api_key:$("api-key").value||null,model:$("model").value||null,include_prompts:$("include-prompts").checked});state.result=result;state.history.push({name:`${state.label} (+AI)`,risk:result.risk_score,rules:result.rule_score,gemma:result.gemma_score,findings:result.findings.length});renderResult();}
+    catch(error){$("ai-message").innerHTML=`<div class="notice error">${escapeHtml(error.message)}</div>`;}finally{$("run-ai").disabled=false;}
+  });
+  $("include-prompts").addEventListener("change",async()=>{
+    if(!state.workflow)return;
+    try{const data=await request("/api/preview",{...baseRequest(),include_prompts:$("include-prompts").checked});$("facts").textContent=JSON.stringify(data.facts,null,2);}
+    catch(error){$("ai-message").innerHTML=`<div class="notice error">Could not refresh the fact sheet: ${escapeHtml(error.message)}</div>`;}
+  });
+  $("run-sim").addEventListener("click",async()=>{
+    if(!state.result)return;$("run-sim").disabled=true;$("scenarios").innerHTML='<div class="notice">Creating fictional walkthroughs…</div>';
+    try{const data=await request("/api/simulate",{...baseRequest(),api_key:$("sim-key").value||null,model:$("sim-model").value||null,use_ai:$("sim-ai").checked,include_prompts:$("include-prompts").checked});state.scenarios=data.scenarios;$("scenarios").innerHTML=state.scenarios.length?state.scenarios.map(renderScenario).join(""):'<div class="empty">No untrusted input reaches an agent, so no attack path was found.</div>';}
+    catch(error){$("scenarios").innerHTML=`<div class="notice error">${escapeHtml(error.message)}</div>`;}finally{$("run-sim").disabled=false;}
+  });
+  $("run-fix").addEventListener("click",async()=>{
+    if(!state.workflow)return;$("run-fix").disabled=true;$("fix-result").innerHTML='<div class="notice">Building a hardened copy…</div>';
+    try{const data=await request("/api/fix",baseRequest());state.fix=data;const before=state.result.rule_score,after=data.result.risk_score;
+      $("fix-result").innerHTML=`<div class="metrics"><div class="metric"><span>Risk before</span><strong>${escapeHtml(before)}</strong></div><div class="metric"><span>Risk after</span><strong>${escapeHtml(after)}</strong></div></div><h3>Changes</h3>${table(["Node","Change"],data.changes.map((change)=>`<tr><td>${escapeHtml(change.node)}</td><td>${escapeHtml(change.change)}</td></tr>`).join(""))}<h3>Manual steps</h3><ul>${data.manual.map((item)=>`<li>${escapeHtml(item)}</li>`).join("")||"<li>None listed.</li>"}</ul><details><summary>Diff (original → hardened)</summary><pre>${escapeHtml(data.diff)}</pre></details><div class="actions"><button id="download-fix">Download hardened workflow</button></div><p>Review before importing: set real table/columns, rotate removed secrets, and extend the validation node.</p>`;
+      $("download-fix").addEventListener("click",()=>download("hardened_workflow.json",JSON.stringify(data.patched,null,2),"application/json"));
+    }catch(error){$("fix-result").innerHTML=`<div class="notice error">${escapeHtml(error.message)}</div>`;}finally{$("run-fix").disabled=false;}
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,38 +1,51 @@
-# 🛡 AgentAudit: AI Workflow Security Analyzer
+# AgentAudit: AI Workflow Security Analyzer
 
-Upload an n8n workflow JSON → Python inventories agents, tools, inputs, credentials and data flows → Gemma 4 reasons about how they combine into security risks → you get an explainable, severity-ranked report with fixes.
+Upload an n8n workflow JSON to inventory agents, tools, inputs, credentials, and data flows. Deterministic Python rules identify potential risks; optional Gemini analysis explains how the components combine. Reports include recommended fixes.
 
 ## How it works
-1. `analyzer/parser.py`: size-limited, safe `json.loads` (nothing is ever executed).
-2. `analyzer/detector.py`: finds agents, tools, external inputs, outbound actions, approval gates, input→agent flows.
-3. `analyzer/secrets.py`: flags credential-like values; only masked output is kept.
-4. `analyzer/risk_rules.py`: deterministic findings for six categories (prompt injection, excessive permissions, secret exposure, unsafe tool calling, data exfiltration, untrusted input).
-5. `analyzer/normalizer.py`: builds a compact fact sheet with **no secret values and no credential IDs**.
-6. `ai/gemma.py`: sends facts to Gemma 4, validates JSON with Pydantic, and drops findings that reference nodes that don't exist.
-7. `app.py`: Streamlit report with tables, charts, graph, before/after comparison, Markdown/JSON export.
 
-**Role of Gemma 4:** Python finds facts; Gemma interprets combinations (input → agent → tool), adds findings the rules missed, prioritizes, and explains impact. Without a key the app still runs in rules-only mode.
+1. `analyzer/parser.py` applies a size limit and parses JSON only; workflows are never executed.
+2. `analyzer/detector.py` identifies agents, tools, external inputs, outbound actions, approval gates, and input-to-agent flows.
+3. `analyzer/secrets.py` detects credential-like values; secret values are masked in the AI fact sheet.
+4. `analyzer/risk_rules.py` generates deterministic findings across six risk categories.
+5. `analyzer/normalizer.py` builds a compact fact sheet without secret values or credential IDs.
+6. `ai/gemma.py` optionally sends the reviewed facts to Google Gemini, validates the response with Pydantic, and discards findings that reference unknown nodes.
+7. `app.py` exposes the FastAPI ASGI application for Vercel and its JSON API. `index.html` provides the browser interface.
 
-## Setup
-```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env   # add GEMINI_API_KEY, confirm GEMMA_MODEL id
-streamlit run app.py
+Without a Gemini API key, the application works in deterministic rules-only mode.
+
+## Run locally
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m uvicorn app:app --reload
 ```
-Demo: analyze the **vulnerable sample**, then the **safer sample**, and open the *Compare runs* tab.
-Sample secrets are fake. Regenerate samples with `python samples/make_samples.py`.
 
-## Safety & limitations
-- Risk scores are estimates, not a security certification; "no findings" does not mean "safe".
+Open `http://localhost:8000`. You can also set `GEMINI_API_KEY` in the environment to enable optional Gemini analysis. Keys entered in the interface are sent only with the AI request and are not saved by the app.
+
+Analyze the vulnerable sample, then the safer sample, and compare their risk scores. Sample secrets are fake; regenerate them with `python samples/make_samples.py`.
+
+## Deploy to Vercel
+
+Import this GitHub repository into Vercel with the project root set to the repository root. Vercel detects the top-level FastAPI ASGI application named `app` in `app.py`; `index.html` is served at `/`. `requirements.txt` lists the Python dependencies. No Dockerfile is required.
+
+To enable Gemini in production, configure `GEMINI_API_KEY` as a Vercel environment variable. Rules-only analysis requires no environment variables.
+
+## Safety and limitations
+
+- Risk scores are estimates, not a security certification; "no findings" does not mean a workflow is safe.
 - Heuristics are tuned for common n8n node types; unknown node types may be missed.
-- Never executes uploaded workflows; never modifies or deploys them.
-- Secret values are masked before model analysis.
+- Uploaded workflows are processed in memory and are never executed, modified, or deployed.
+- Secret values are masked before model analysis. Redaction is best-effort; inspect the fact sheet before enabling AI analysis.
+- AI analysis is optional and sends the displayed fact sheet to Google's API.
+- The browser keeps comparison history for the current page only; the server does not persist uploaded workflows or reports.
+
+## Features
+
+- Privacy-first, rules-only workflow analysis and a reviewable fact sheet for optional Gemini analysis.
+- Fictional prompt-injection attack walkthroughs, generated from deterministic templates or Gemini.
+- Downloadable hardened workflow copies with changes, manual follow-ups, and a diff. Nothing is automatically deployed.
+- Markdown and JSON report downloads, workflow inventory, agent-tool relationships, external-input flows, and OWASP LLM Top 10 tags on findings.
 
 MIT licensed.
-
-## Unique features
-- **Privacy-first AI step:** the app shows the exact fact sheet before anything is sent; prompt text is off by default; choose **Local Ollama** so nothing leaves your machine (`OLLAMA_MODEL` in `.env`, e.g. your Gemma 4 tag). "Clear my data" wipes the session.
-- **Attack simulation:** written, fictional walkthroughs of how a hijacked agent could misuse its tools (rule-based, or Gemma-written). Nothing is executed.
-- **Auto-fix with diff:** generates a hardened copy (approval gates, validation node, secret removal, narrower DB access, untrusted-input prompt wrapper) with a diff and before/after score. Download-only; never deploys.
-- **OWASP LLM Top 10 tags** on every finding (LLM01, LLM02, LLM06).
